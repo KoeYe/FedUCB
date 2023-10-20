@@ -25,8 +25,6 @@ class Client:
     def run(self):
         while True:
             try:
-                data = input("Enter data to send: ")
-                self.send(data)
                 self.recv()
             except KeyboardInterrupt:
                 break
