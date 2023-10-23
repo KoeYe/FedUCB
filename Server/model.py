@@ -32,11 +32,10 @@ class Model(pt.nn.Module):
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                            100. * batch_idx / len(train_loader), loss.item()))
 
-    def generate_gradients(self, data, target):
-        # 计算loss
-        output = self(data)
-        loss = pt.nn.functional.nll_loss(output, target)
-        # 计算梯度
-        loss.backward()
-        # 返回梯度
-        return [param.grad for param in self.parameters()]
+    def update_model_with_gradients(self, gradients, optimizer):
+        # 将梯度应用到模型参数上
+        for param, grad in zip(self.parameters(), gradients):
+            param.data -= optimizer.lr * grad
+
+        # 使用优化器的其他功能来更新参数
+        optimizer.step()

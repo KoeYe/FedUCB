@@ -1,5 +1,7 @@
 import socket
 
+from .model import Model
+
 SERVER_HOST = 'localhost'
 SERVER_PORT = 6060
 
@@ -8,6 +10,8 @@ class Client:
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((SERVER_HOST, SERVER_PORT))
         self._client.setblocking(False)
+        # 这里初始化了model，但是参数要等到server端来初始化
+        self._model = Model()
 
     def send(self, data):
         self._client.send(data.encode())
@@ -26,6 +30,7 @@ class Client:
                 self.recv()
             except KeyboardInterrupt:
                 break
+            # TODO: training and send model gradient to server, then update model parameters
 
 
 

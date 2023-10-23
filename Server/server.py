@@ -2,6 +2,8 @@ import socket
 import threading
 import time
 
+from .model import Model
+
 SERVER_HOST = 'localhost'
 SERVER_PORT = 6060
 
@@ -16,6 +18,7 @@ class Server:
         self._punctuating = False
         self._client_num = 0
         self._clients = []
+        self._model = Model()
 
     def add_client(self):
         try:
@@ -24,6 +27,7 @@ class Server:
             self._client_num += 1
             print("New client connected:", address)
             print("Current clients number:", self._client_num)
+            # TODO: align model parameters
         except BlockingIOError:
             pass
         except Exception as e:
@@ -92,6 +96,7 @@ class Server:
                 threading.Thread(target=self.punctuate).start()
 
             # receive data from clients
+            # TODO: add aggregation operation, then update model parameters, then send parameter to clients
             for client in self._clients:
                 self.handle_client(client)
 
