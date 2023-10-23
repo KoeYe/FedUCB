@@ -4,6 +4,5 @@ from Client import Client
 
 if __name__ == "__main__":
     client = Client()
-    threading.Thread(client.run()).start()
-    client.send("Hello, server!")
+    client.run()
     print("Sending message to server...")

@@ -2,8 +2,8 @@ import socket
 import threading
 import time
 
-from .configure import SERVER_HOST
-from .configure import SERVER_PORT
+SERVER_HOST = 'localhost'
+SERVER_PORT = 6060
 
 #
 # Server class

@@ -1,7 +1,7 @@
 import socket
 
-from .configure import SERVER_HOST
-from .configure import SERVER_PORT
+SERVER_HOST = 'localhost'
+SERVER_PORT = 6060
 
 class Client:
     def __init__(self):
@@ -19,8 +19,6 @@ class Client:
                 print("Received from server:", data.decode())
         except BlockingIOError:
             pass
-        except Exception as e:
-            print(e)
 
     def run(self):
         while True:
@@ -28,8 +26,8 @@ class Client:
                 self.recv()
             except KeyboardInterrupt:
                 break
-            except Exception as e:
-                print(e)
+
+
 
     def close(self):
         self._client.close()
