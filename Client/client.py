@@ -1,9 +1,7 @@
 import socket
 
 from .model import Model
-
-SERVER_HOST = 'localhost'
-SERVER_PORT = 6060
+from .config import SERVER_HOST, SERVER_PORT, logger
 
 class Client:
     def __init__(self):
@@ -20,7 +18,7 @@ class Client:
         try:
             data = self._client.recv(1024)
             if data:
-                print("Received from server:", data.decode())
+                logger.info("Received data: %s", data)
         except BlockingIOError:
             pass
 

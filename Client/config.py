@@ -17,14 +17,14 @@ class OUTPUT(Enum):
 # ---------------------------------------------------------------#
 
 # set the configurations ----------------------------------------#
-NAME = "Server"
+NAME = "Client"
 LOG_DIR = "logs"
 configurations = {
     RunMode.DEFAULT: {
         "NAME": NAME,
         "LOGLEVEL": logging.INFO,
         "LOGOUTPUT": OUTPUT.BOTH,
-        "LOGFILE": "server.log",
+        "LOGFILE": "client.log",
         "CLEAR_LOGFILE": False,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060
@@ -33,7 +33,7 @@ configurations = {
         "NAME": NAME,
         "LOGLEVEL": logging.DEBUG,
         "LOGOUTPUT": OUTPUT.BOTH,
-        "LOGFILE": "server_debug.log",
+        "LOGFILE": "client_debug.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060
@@ -59,7 +59,7 @@ try:
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)
 
-    if CLEAR_LOGFILE and os.path.exists(LOG_DIR + "/" + LOGFILE):
+    if CLEAR_LOGFILE and os.path.exists(LOGFILE):
         with open(LOGFILE, "w") as f:
             f.write("")
 except KeyError:
