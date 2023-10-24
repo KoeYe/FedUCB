@@ -3,9 +3,7 @@ import threading
 import time
 
 from .model import Model
-
-SERVER_HOST = 'localhost'
-SERVER_PORT = 6060
+from .config import *
 
 #
 # Server class
@@ -25,26 +23,30 @@ class Server:
             client, address = self._server.accept()
             self._clients.append(client)
             self._client_num += 1
-            print("New client connected:", address)
-            print("Current clients number:", self._client_num)
+            logger.info("New client connected: %s", address)
+            logger.info("Current clients number: %d", self._client_num)
             # TODO: align model parameters
         except BlockingIOError:
             pass
         except Exception as e:
             print(e)
 
+    def param_algin(self):
+        pass
+
     def remove_client(self, client):
-        print("Client disconnected")
+        logger.info("Client disconnected")
         self._clients.remove(client)
         self._client_num -= 1
-        print("Current clients number:", self._client_num)
+        logger.info("Current clients number: %d", self._client_num)
 
     def close(self):
-        print("Closing server...")
+        logger.debug("Closing server...")
         for client in self._clients:
             client.close()
         self._server.close()
-        print("Server closed")
+        self._punctuating = False
+        logger.debug("Server closed")
 
     def send(self, data):
         for client in self._clients:
@@ -58,7 +60,7 @@ class Server:
         try:
             data = client.recv(1024)
             if data:
-                print("Received from client:", data.decode())
+                logger.info("Received from client: %s", data.decode())
         except BlockingIOError:
             pass
         except Exception as e:
@@ -80,7 +82,7 @@ class Server:
         # bind and listen
         self._server.bind((server_host, server_port))
         self._server.listen(5)
-        print("Server is listening on", server_host, ":", server_port)
+        logger.info("Server is listening on %s:%s", server_host, server_port)
 
         # main loop
         while True:
