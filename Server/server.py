@@ -4,6 +4,7 @@ import time
 
 from .model import Model
 from .config import SERVER_HOST, SERVER_PORT, logger
+from .protocol import Protocol
 
 class Server:
     def __init__(self):
@@ -14,6 +15,7 @@ class Server:
         self._clients = []
         self._model = Model()
         # self.print_model()
+        self._protocol = Protocol()
 
     def print_model(self):
         for name, param in self._model.named_parameters():
@@ -36,8 +38,10 @@ class Server:
             print(e)
 
     def send_param(self):
-        param = self._model.parameters()
-        self.send(param)
+        logger.debug("parameters: \n" + str(self._model.state_dict()))
+        param_values = [param.data for param in self._model.parameters()]
+        message = self._protocol.encode_parameters(param_values, 'params')
+        self.send(message)
 
     def remove_client(self, client):
         logger.info("Client disconnected")
@@ -65,7 +69,8 @@ class Server:
         try:
             data = client.recv(1024)
             if data:
-                logger.info("Received from client: %s", data.decode())
+                message = self._protocol.decode(data)
+                logger.info("Received from client: %s", message)
         except BlockingIOError:
             pass
         except Exception as e:
@@ -77,7 +82,9 @@ class Server:
         # send data to clients every 1 sec
         while True:
             try:
-                self.send(time.ctime().encode())
+                time_str = time.ctime()
+                message = self._protocol.encode_text(time_str, 'text')
+                self.send(message)
                 time.sleep(1)
             except KeyboardInterrupt:
                 break
