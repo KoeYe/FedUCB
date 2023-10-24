@@ -33,7 +33,7 @@ configurations = {
         "NAME": NAME,
         "LOGLEVEL": logging.DEBUG,
         "LOGOUTPUT": OUTPUT.BOTH,
-        "LOGFILE": "server_debug.log",
+        "LOGFILE_NAME": "server_debug.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060
@@ -50,17 +50,19 @@ try:
     config = configurations[RUNMODE]
     LOGLEVEL = config["LOGLEVEL"]
     LOGOUTPUT = config["LOGOUTPUT"]
-    LOGFILE = config["LOGFILE"]
+    LOGFILE_NAME = config["LOGFILE_NAME"]
     CLEAR_LOGFILE = config["CLEAR_LOGFILE"]
     SERVER_HOST = config["SERVER_HOST"]
     SERVER_PORT = config["SERVER_PORT"]
     NAME = config["NAME"]
+    LOGFILE_ROUTES = LOG_DIR + "/" + LOGFILE_NAME
 
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)
 
-    if CLEAR_LOGFILE and os.path.exists(LOG_DIR + "/" + LOGFILE):
-        with open(LOGFILE, "w") as f:
+    if CLEAR_LOGFILE and os.path.exists(LOGFILE_ROUTES):
+        print("Clearing log file...")
+        with open(LOGFILE_ROUTES, "w") as f:
             f.write("")
 except KeyError:
     raise Exception("Unknown run mode")
@@ -70,7 +72,7 @@ except KeyError:
 logger = logging.Logger(NAME)
 logger.setLevel(LOGLEVEL)
 file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s - %(filename)s - %(lineno)d")
-file_handler = logging.FileHandler(LOG_DIR + "/" + LOGFILE)
+file_handler = logging.FileHandler(LOGFILE_ROUTES)
 file_handler.setFormatter(file_formatter)
 
 console_formatter = logging.Formatter("%(message)s")

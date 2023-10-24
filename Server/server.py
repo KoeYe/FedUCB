@@ -3,12 +3,8 @@ import threading
 import time
 
 from .model import Model
-from .config import *
+from .config import SERVER_HOST, SERVER_PORT, logger
 
-#
-# Server class
-#   for simple sake, this server just listen to one port
-#
 class Server:
     def __init__(self):
         self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,6 +13,13 @@ class Server:
         self._client_num = 0
         self._clients = []
         self._model = Model()
+        # self.print_model()
+
+    def print_model(self):
+        for name, param in self._model.named_parameters():
+            logger.debug(f"Layer: {name} | Size: {param.size()} | Values : {param[:2]} \n")
+            logger.debug("Values: ")
+            logger.debug(param.data)
 
     def add_client(self):
         try:
@@ -25,14 +28,16 @@ class Server:
             self._client_num += 1
             logger.info("New client connected: %s", address)
             logger.info("Current clients number: %d", self._client_num)
-            # TODO: align model parameters
+            # send model parameters to client
+            self.send_param()
         except BlockingIOError:
             pass
         except Exception as e:
             print(e)
 
-    def param_algin(self):
-        pass
+    def send_param(self):
+        param = self._model.parameters()
+        self.send(param)
 
     def remove_client(self, client):
         logger.info("Client disconnected")
