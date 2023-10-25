@@ -21,8 +21,8 @@ class OUTPUT(Enum):
 # here are fixed configurations
 NAME = "Client" # log name not necessary
 LOG_DIR = "logs" # dir of logs
-TRAIN_DATA_DIR = "../data/femnist/train"
-TEST_DATA_DIR = "../data/femnist/test"
+TRAIN_DATA_DIR = "./data/femnist/train"
+TEST_DATA_DIR = "./data/femnist/test"
 
 # here are changeable configurations
 configurations = {
@@ -48,7 +48,12 @@ configurations = {
         "LOGFILE_NAME": "client_local.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
-        "SERVER_PORT": 6060
+        "SERVER_PORT": 6060,
+        "EPOCHS": 500,
+        "BATCH_SIZE": 10,
+        "LEARNING_RATE": 0.001,
+        "MOMENTUM": 0.9,
+        "DEVICE": "cpu",
     }
 }
 # ---------------------------------------------------------------#
@@ -67,6 +72,12 @@ try:
     SERVER_HOST = config["SERVER_HOST"]
     SERVER_PORT = config["SERVER_PORT"]
     LOGFILE_ROUTES = LOG_DIR + "/" + LOGFILE_NAME
+    EPOCHS = config["EPOCHS"]
+    BATCH_SIZE = config["BATCH_SIZE"]
+    LEARNING_RATE = config["LEARNING_RATE"]
+    MOMENTUM = config["MOMENTUM"]
+    DEVICE = config["DEVICE"]
+
 
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)

@@ -246,7 +246,7 @@ def test():
     _, result = protocol.decode(message)
     # 将result中的tensor给到client的model中
     result_dict = {}
-    print(len(result))
+    # print(len(result))
     for i in client_model.state_dict().keys():
         result_dict[i] = result.pop(0)
 

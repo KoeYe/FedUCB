@@ -1,11 +1,14 @@
 import socket
 import threading
 import struct
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
 
 from .model import Model
-from .config import SERVER_HOST, SERVER_PORT, RUNMODE, RunMode
+from .config import RunMode, SERVER_HOST, SERVER_PORT, RUNMODE, TRAIN_DATA_DIR, TEST_DATA_DIR, EPOCHS, BATCH_SIZE, LEARNING_RATE, MOMENTUM, DEVICE
 from .protocol import Protocol
-from .util import read_data, logger
+from .util import read_data, logger, data_preprocess, flatten_to_tensor
 
 class Client:
     '''
@@ -38,8 +41,10 @@ class Client:
         # 调用初始化函数
         mode_to_init_func[mode]()
 
-    # online的初始化方法，这里要端口有链接才能初始化成功
     def init_online(self):
+        '''
+            online的初始化方法，需要端口有链接才能初始化成功
+        '''
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((SERVER_HOST, SERVER_PORT))
         self._client.setblocking(False)
@@ -47,8 +52,10 @@ class Client:
         self._model = Model()
         self._protocol = Protocol()
 
-    # local的初始化方法，不需要端口，直接本地可以训练
     def init_local(self):
+        '''
+            local的初始化方法，不需要端口，直接本地可以训练
+        '''
         self._model = Model()
 
     def send(self, data):
@@ -122,8 +129,40 @@ class Client:
     def run_local(self):
         '''
             local的run方法
+            TODO: 这里训练的逻辑需要抽象出来
         '''
         logger.info("running local...")
+        client, groups, train_data, test_data = read_data(TRAIN_DATA_DIR, TEST_DATA_DIR)
+
+        # select one client to train
+        client_id = client[0]
+        client_test_data = test_data[client_id]
+
+        acc, loss = self._model.test(client_test_data)
+        logger.info("initial acc: %f, initial loss: %f", acc, loss)
+
+        client_train_data = train_data[client_id]
+
+        x, y = data_preprocess(client_train_data)
+
+        train_dataset = TensorDataset(x, y)
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+        loss_func = torch.nn.CrossEntropyLoss()
+
+        optimizer = optim.SGD(self._model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+
+        self._model.train()
+        # start training
+        for epoch in range(EPOCHS):
+            for batch_idx, (inputs, targets) in enumerate(train_dataloader):
+                outputs = self._model(inputs)
+                loss = loss_func(outputs, targets)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            acc, loss = self._model.test(client_test_data)
+            logger.info("epoch %d, acc: %f, loss: %f", epoch, acc, loss)
 
     def run(self):
         '''
