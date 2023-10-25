@@ -25,7 +25,7 @@ configurations = {
         "LOGLEVEL": logging.INFO,
         "LOGOUTPUT": OUTPUT.BOTH,
         "LOGFILE_NAME": "client.log",
-        "CLEAR_LOGFILE": False,
+        "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060
     },
@@ -34,7 +34,7 @@ configurations = {
         "LOGLEVEL": logging.DEBUG,
         "LOGOUTPUT": OUTPUT.BOTH,
         "LOGFILE_NAME": "client_debug.log",
-        "CLEAR_LOGFILE": False,
+        "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060
     }
