@@ -1,7 +1,29 @@
 import os
 import json
+import logging
 
-from config import logger
+from .config import *
+
+# set the logger ------------------------------------------------#
+logger = logging.Logger(NAME)
+logger.setLevel(LOGLEVEL)
+file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s - %(filename)s - %(lineno)d")
+file_handler = logging.FileHandler(LOGFILE_ROUTES)
+file_handler.setFormatter(file_formatter)
+
+console_formatter = logging.Formatter("%(message)s")
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(console_formatter)
+
+handlers = {
+    OUTPUT.FILE: [file_handler],
+    OUTPUT.CONSOLE: [console_handler],
+    OUTPUT.BOTH: [file_handler, console_handler]
+}
+
+for handler in handlers.get(LOGOUTPUT):
+    logger.addHandler(handler)
+# ---------------------------------------------------------------#
 
 def read_data(train_data_dir, test_data_dir):
     '''parses data in given train and test data directories
