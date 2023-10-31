@@ -32,7 +32,7 @@ configurations = {
         "LOGFILE_NAME": "client.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
-        "SERVER_PORT": 6060
+        "SERVER_PORT": 6060,
     },
     RunMode.DEBUG: {
         "LOGLEVEL": logging.DEBUG,
@@ -40,7 +40,8 @@ configurations = {
         "LOGFILE_NAME": "client_debug.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
-        "SERVER_PORT": 6060
+        "SERVER_PORT": 6060,
+        "RESULT_DIR": "./result_debug",
     },
     RunMode.LOCAL: {
         "LOGLEVEL": logging.DEBUG,
@@ -51,9 +52,10 @@ configurations = {
         "SERVER_PORT": 6060,
         "EPOCHS": 500,
         "BATCH_SIZE": 10,
-        "LEARNING_RATE": 0.001,
+        "LEARNING_RATE": 0.0001,
         "MOMENTUM": 0.9,
         "DEVICE": "cpu",
+        "RESULT_DIR": "./result_local"
     }
 }
 # ---------------------------------------------------------------#
@@ -77,6 +79,7 @@ try:
     LEARNING_RATE = config["LEARNING_RATE"]
     MOMENTUM = config["MOMENTUM"]
     DEVICE = config["DEVICE"]
+    RESULT_DIR = config["RESULT_DIR"]
 
 
     if not os.path.exists(LOG_DIR):

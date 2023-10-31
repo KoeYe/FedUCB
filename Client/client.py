@@ -1,12 +1,14 @@
+import os
 import socket
 import threading
 import struct
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+import matplotlib.pyplot as plt
 
 from .model import Model
-from .config import RunMode, SERVER_HOST, SERVER_PORT, RUNMODE, TRAIN_DATA_DIR, TEST_DATA_DIR, EPOCHS, BATCH_SIZE, LEARNING_RATE, MOMENTUM, DEVICE
+from .config import RunMode, SERVER_HOST, SERVER_PORT, RUNMODE, TRAIN_DATA_DIR, TEST_DATA_DIR, EPOCHS, BATCH_SIZE, LEARNING_RATE, MOMENTUM, DEVICE, RESULT_DIR
 from .protocol import Protocol
 from .util import read_data, logger, data_preprocess, flatten_to_tensor
 
@@ -153,6 +155,9 @@ class Client:
         optimizer = optim.SGD(self._model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
 
         self._model.train()
+
+        losses = []
+        accuracies = []
         # start training
         for epoch in range(EPOCHS):
             for batch_idx, (inputs, targets) in enumerate(train_dataloader):
@@ -163,6 +168,36 @@ class Client:
                 optimizer.step()
             acc, loss = self._model.test(client_test_data)
             logger.info("epoch %d, acc: %f, loss: %f", epoch, acc, loss)
+            losses.append(loss)
+            accuracies.append(acc)
+
+        # start drawing
+        plt.figure(figsize=(10, 4))
+
+        plt.subplot(1, 2, 1)
+        plt.plot(losses, label='Loss')
+        plt.title('Training Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.text(1, 1, f'LR: {LEARNING_RATE}\nBatch Size: {BATCH_SIZE}', bbox=dict(facecolor='white', alpha=0.5))
+        plt.legend()
+
+        plt.subplot(1, 2, 2)
+        plt.plot(accuracies, label='Accuracy', color='orange')
+        plt.title('Training Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+
+        plt.tight_layout()
+
+        # save the figure
+        if os.path.exists(RESULT_DIR) == False:
+            os.makedirs(RESULT_DIR)
+        plt.savefig(RESULT_DIR + '/' + str(LEARNING_RATE) + '-' + str(BATCH_SIZE) + '.png')
+
+        # plt.show()
+
 
     def run(self):
         '''
