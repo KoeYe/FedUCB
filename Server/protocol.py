@@ -63,11 +63,13 @@ class Protocol:
         message = header + payload + self.footer
         length = len(message)
         message = struct.pack('i', length) + message
+        # print(len(message) - length)
+        print(message[-5:])
         return message
 
     def decode(self, message, decompress=False):
         # 自动判断消息类型
-        msg_type = message[len(self.header):len(self.header)+1]
+        msg_type = message[message.find(self.header) + len(self.header):message.find(self.header) + len(self.header) + 1]
         if msg_type not in self.inverse_msg_types:
             raise ValueError("Unknown message type")
         msg_type = self.inverse_msg_types[msg_type]
@@ -82,7 +84,7 @@ class Protocol:
         if not message.startswith(self.header) or not message.endswith(self.footer):
             raise ValueError("Invalid message format")
         # 去掉header和footer
-        message = message[len(self.header):-len(self.footer)]
+        message = message[message.find(self.header) + len(self.header):-len(self.footer)]
         # 获取消息类型，因为消息类型是一个字节，所以取第一个字节即可
         msg_type = message[:1]
         if msg_type not in self.inverse_msg_types:
@@ -102,14 +104,14 @@ class Protocol:
 
 
     def decode_tensor(self, message, decompress=False):
-        print(message)
-        if not message.startswith(self.header) or not message.endswith(self.footer):
+        if not message.endswith(self.footer):
             raise ValueError("Invalid message format")
 
         # 去掉header和footer
-        message = message[len(self.header):-len(self.footer)]
+        message = message[message.find(self.header) + len(self.header):-len(self.footer)]
         # 获取消息类型，因为消息类型是一个字节，所以取第一个字节即可
         msg_type = message[:1]
+        # print(msg_type)
         if msg_type not in self.inverse_msg_types:
             raise ValueError("Unknown message type")
         # 利用反向映射，将消息类型转换为字符串
@@ -246,7 +248,7 @@ def test():
     _, result = protocol.decode(message)
     # 将result中的tensor给到client的model中
     result_dict = {}
-    print(len(result))
+    # print(len(result))
     for i in client_model.state_dict().keys():
         result_dict[i] = result.pop(0)
 

@@ -6,9 +6,11 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
+import random
+import asyncio
 
 from .model import Model
-from .config import RunMode, SERVER_HOST, SERVER_PORT, RUNMODE, TRAIN_DATA_DIR, TEST_DATA_DIR, EPOCHS, BATCH_SIZE, LEARNING_RATE, MOMENTUM, DEVICE, RESULT_DIR
+from .config import RunMode, SERVER_HOST, SERVER_PORT, RUNMODE, TRAIN_DATA_DIR, TEST_DATA_DIR, EPOCHS, BATCH_SIZE, LEARNING_RATE, MOMENTUM, DEVICE, RESULT_DIR, LOCAL_EPOCHS
 from .protocol import Protocol
 from .util import read_data, logger, data_preprocess, flatten_to_tensor
 
@@ -47,12 +49,15 @@ class Client:
         '''
             online的初始化方法，需要端口有链接才能初始化成功
         '''
+        print("Initializing...")
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._client.connect((SERVER_HOST, SERVER_PORT))
         self._client.setblocking(False)
         # 这里初始化了model，但是参数要等到server端来初始化
         self._model = Model()
         self._protocol = Protocol()
+        # recv()的时候需要阻塞，所以这里设置为True
+        self._client.setblocking(True)
 
     def init_local(self):
         '''
@@ -62,46 +67,26 @@ class Client:
 
     def send(self, data):
         # 注意这里的data传入的时候就是已经经过protocol.encode()编码过的
-        self._client.send(data.encode())
-
-    def recv_all(self, length):
-        '''
-            这个函数用来根据长度从socket中读取数据
-            在recv()中会用到两种方法
-            一个是length=4, 这个时候在等待数据头
-            一个是length=其他, 这个时候在等待数据体
-        '''
-        data = b""
-        while len(data) < length:
-            more = self._client.recv(length - len(data))
-            if not more:
-                return b""
-            data += more
-        return data
+        self._client.send(data)
 
     def recv(self):
         '''
             这个函数用来接收数据
             与recv_all()配合使用
         '''
-        try:
-            length = self.recv_all(4)
-            logger.debug(length)
-            if not length:
-                return b""
-            length = struct.unpack('i', length)[0]
-            data = self.recv_all(length)
-            logger.debug(data)
-            if not data:
-                return b""
-            type, message = self._protocol.decode(data)
-            if type == 'text':
-                logger.info("Received data: %s", message)
-            elif type == 'params':
-                logger.info("aligning parameters")
-                self.align_param(message)
-        except BlockingIOError:
-            pass
+        length = self._client.recv(4)
+        print("length: ", str(struct.unpack('i', length)[0]))
+        data = self._client.recv(struct.unpack('i', length)[0])
+        print("data_end: ", data[-5:])
+        print(b'<END>')
+        type, message = self._protocol.decode(data)
+        if type == 'text':
+            logger.info("Received data: %s", message)
+            return message
+        elif type == 'params':
+            logger.info("aligning parameters")
+            self.align_param(message)
+            return message
 
     def align_param(self, data):
         '''
@@ -109,24 +94,76 @@ class Client:
             由于server端传来的参数是一个list, 所以这里要遍历
             由于本地的参数是一个dict, 所以这里要用dict的方法
         '''
-        logger.debug("parameters: \n" + str(self._model.state_dict()))
+        # logger.debug("parameters: \n" + str(self._model.state_dict()))
         data_dict = {}
         for i in self._model.state_dict().keys():
             data_dict[i] = data.pop(0)
         self._model.load_state_dict(data_dict)
-        logger.debug("aligned parameters: \n" + str(self._model.state_dict()))
+        # logger.debug("aligned parameters: \n" + str(self._model.state_dict()))
 
     def run_online(self):
         '''
             online的run方法
         '''
         logger.info("running online...")
+        self.recv()
+        self.training_online()
+
+    def training_online(self):
+        # training and send model gradient to server, then update model parameters
+        clients, groups, train_data, test_data = read_data(TRAIN_DATA_DIR, TEST_DATA_DIR)
+
+        # select one client to train
+        client_id = clients[random.choice(range(len(clients)))]
+        client_test_data = test_data[client_id]
+
+        acc, loss = self._model.test(client_test_data)
+        logger.info("initial acc: %f, initial loss: %f", acc, loss)
+
+        client_train_data = train_data[client_id]
+
+        x, y = data_preprocess(client_train_data)
+
+        train_dataset = TensorDataset(x, y)
+
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+        loss_func = torch.nn.CrossEntropyLoss()
+
+        optimizer = optim.SGD(self._model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM)
+
+        self._model.train()
+
+        local_epoch = 0
+        total_epoch = 0
+        # start training
         while True:
-            try:
+            for batch_idx, (inputs, targets) in enumerate(train_dataloader):
+                outputs = self._model(inputs)
+                loss = loss_func(outputs, targets)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            acc, loss = self._model.test(client_test_data)
+            logger.info("total_epoch %d, local_epoch %d, acc: %f, loss: %f",total_epoch, local_epoch, acc, loss)
+            local_epoch += 1
+            if local_epoch == LOCAL_EPOCHS:
+                logger.info("send gradients to server")
+                # send model gradients to server
+                self.send_grad()
+                # receive model parameters from server
                 self.recv()
-            except KeyboardInterrupt:
-                break
-            # TODO: training and send model gradient to server, then update model parameters
+                local_epoch = 0
+                total_epoch += 1
+
+    def send_grad(self):
+        '''
+            这个函数用来将本地的model的grad发送给server
+        '''
+        grad_values = [param for param in self._model.parameters()]
+        message = self._protocol.encode_gradients(grad_values, 'grad')
+        self.send(message)
+        # logger.debug("type: "+ type)
 
     def run_local(self):
         '''
@@ -134,10 +171,10 @@ class Client:
             TODO: 这里训练的逻辑需要抽象出来
         '''
         logger.info("running local...")
-        client, groups, train_data, test_data = read_data(TRAIN_DATA_DIR, TEST_DATA_DIR)
+        clients, groups, train_data, test_data = read_data(TRAIN_DATA_DIR, TEST_DATA_DIR)
 
         # select one client to train
-        client_id = client[0]
+        client_id = clients[0]
         client_test_data = test_data[client_id]
 
         acc, loss = self._model.test(client_test_data)

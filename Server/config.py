@@ -2,7 +2,6 @@ import logging
 import os
 from enum import Enum
 
-
 # define the run mode of the server ------------------------------#
 class RunMode(Enum):
     DEFAULT = 1
@@ -19,6 +18,9 @@ class OUTPUT(Enum):
 # set the configurations ----------------------------------------#
 NAME = "Server"
 LOG_DIR = "logs"
+BANDWIDTH = 10
+TEST_DATA_DIR = "./data/femnist/test"
+
 configurations = {
     RunMode.DEFAULT: {
         "NAME": NAME,
@@ -27,7 +29,14 @@ configurations = {
         "LOGFILE": "server.log",
         "CLEAR_LOGFILE": False,
         "SERVER_HOST": "localhost",
-        "SERVER_PORT": 6060
+        "SERVER_PORT": 6060,
+        "LEARNING_RATE": 0.0001,
+        "MOMENTUM": 0.9,
+        "BATCH_SIZE": 10,
+        "EPOCHS": 100,
+        "DEVICE": "cpu",
+        "BANDWIDTH": BANDWIDTH,
+        "TEST_DATA_DIR": TEST_DATA_DIR
     },
     RunMode.DEBUG: {
         "NAME": NAME,
@@ -36,7 +45,14 @@ configurations = {
         "LOGFILE_NAME": "server_debug.log",
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
-        "SERVER_PORT": 6060
+        "SERVER_PORT": 6060,
+        "LEARNING_RATE": 0.0001,
+        "MOMENTUM": 0.9,
+        "BATCH_SIZE": 10,
+        "EPOCHS": 100,
+        "DEVICE": "cpu",
+        "BANDWIDTH": BANDWIDTH,
+        "TEST_DATA_DIR": TEST_DATA_DIR
     }
 }
 # ---------------------------------------------------------------#
@@ -56,6 +72,13 @@ try:
     SERVER_PORT = config["SERVER_PORT"]
     NAME = config["NAME"]
     LOGFILE_ROUTES = LOG_DIR + "/" + LOGFILE_NAME
+    BANDWIDTH = config["BANDWIDTH"]
+    LEARNING_RATE = config["LEARNING_RATE"]
+    MOMENTUM = config["MOMENTUM"]
+    BATCH_SIZE = config["BATCH_SIZE"]
+    EPOCHS = config["EPOCHS"]
+    DEVICE = config["DEVICE"]
+    TEST_DATA_DIR = config["TEST_DATA_DIR"]
 
     if not os.path.exists(LOG_DIR):
         os.mkdir(LOG_DIR)
@@ -66,25 +89,4 @@ try:
             f.write("")
 except KeyError:
     raise Exception("Unknown run mode")
-# ---------------------------------------------------------------#
-
-# set the logger ------------------------------------------------#
-logger = logging.Logger(NAME)
-logger.setLevel(LOGLEVEL)
-file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s - %(filename)s - %(lineno)d")
-file_handler = logging.FileHandler(LOGFILE_ROUTES)
-file_handler.setFormatter(file_formatter)
-
-console_formatter = logging.Formatter("%(message)s")
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(console_formatter)
-
-handlers = {
-    OUTPUT.FILE: [file_handler],
-    OUTPUT.CONSOLE: [console_handler],
-    OUTPUT.BOTH: [file_handler, console_handler]
-}
-
-for handler in handlers.get(LOGOUTPUT):
-    logger.addHandler(handler)
 # ---------------------------------------------------------------#

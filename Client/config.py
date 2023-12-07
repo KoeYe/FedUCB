@@ -33,6 +33,13 @@ configurations = {
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060,
+        "EPOCHS": 100,
+        "BATCH_SIZE": 10,
+        "LEARNING_RATE": 0.0001,
+        "MOMENTUM": 0.9,
+        "LOCAL_EPOCHS": 5,
+        "DEVICE": "cpu",
+        "RESULT_DIR": "./result",
     },
     RunMode.DEBUG: {
         "LOGLEVEL": logging.DEBUG,
@@ -41,6 +48,12 @@ configurations = {
         "CLEAR_LOGFILE": True,
         "SERVER_HOST": "localhost",
         "SERVER_PORT": 6060,
+        "EPOCHS": 100,
+        "BATCH_SIZE": 10,
+        "LEARNING_RATE": 0.0001,
+        "MOMENTUM": 0.9,
+        "LOCAL_EPOCHS": 5,
+        "DEVICE": "cpu",
         "RESULT_DIR": "./result_debug",
     },
     RunMode.LOCAL: {
@@ -61,7 +74,7 @@ configurations = {
 # ---------------------------------------------------------------#
 
 # set the run mode ----------------------------------------------#
-RUNMODE = RunMode.LOCAL
+RUNMODE = RunMode.DEBUG
 # ---------------------------------------------------------------#
 
 # get the configurations ----------------------------------------#
@@ -79,6 +92,7 @@ try:
     LEARNING_RATE = config["LEARNING_RATE"]
     MOMENTUM = config["MOMENTUM"]
     DEVICE = config["DEVICE"]
+    LOCAL_EPOCHS = config["LOCAL_EPOCHS"]
     RESULT_DIR = config["RESULT_DIR"]
 
 
